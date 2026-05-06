@@ -85,5 +85,17 @@ func (c *Client) SendToToken(ctx context.Context, push PushMessage) (string, err
 		},
 	}
 
-	return c.client.Send(ctx, message)
+	var lastErr error
+
+	// Retry simple: 3 intentos
+	for i := 1; i <= 3; i++ {
+		resp, err := c.client.Send(ctx, message)
+		if err == nil {
+			return resp, nil
+		}
+
+		lastErr = err
+	}
+
+	return "", lastErr
 }

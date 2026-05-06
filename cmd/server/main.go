@@ -14,6 +14,10 @@ import (
 	internalsqs "github.com/btieyris-pixel/notification-service/internal/sqs"
 )
 
+// Handler de eventos SQS:
+// - Obtiene token del driver desde PostgreSQL
+// - Envía push vía FCM
+// - Si falla, NO elimina mensaje (retry por SQS)
 func main() {
 	ctx := context.Background()
 
@@ -77,7 +81,7 @@ func main() {
 				Event:   event.EventType,
 			})
 			if err != nil {
-				log.Error("failed to send push: " + err.Error())
+				log.Error("push failed after retries: " + err.Error())
 				return err
 			}
 
