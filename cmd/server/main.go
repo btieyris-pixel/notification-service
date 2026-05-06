@@ -14,10 +14,6 @@ import (
 	internalsqs "github.com/btieyris-pixel/notification-service/internal/sqs"
 )
 
-// Handler de eventos SQS:
-// - Obtiene token del driver desde PostgreSQL
-// - Envía push vía FCM
-// - Si falla, NO elimina mensaje (retry por SQS)
 func main() {
 	ctx := context.Background()
 
@@ -67,6 +63,11 @@ func main() {
 		int32(cfg.SQSWaitTimeSeconds),
 		int32(cfg.SQSMaxMessages),
 		func(ctx context.Context, event internalsqs.Event) error {
+			// Handler de eventos SQS:
+			// - Obtiene token del driver desde PostgreSQL
+			// - Envía push vía FCM
+			// - Si falla, NO elimina mensaje SQS
+
 			token, err := repo.GetDriverToken(ctx, event.DriverID)
 			if err != nil {
 				log.Error("token not found for driver: " + event.DriverID)

@@ -16,6 +16,10 @@ type Event struct {
 	Status    string `json:"status,omitempty"`
 }
 
+type snsEnvelope struct {
+	Message string `json:"Message"`
+}
+
 type Handler func(ctx context.Context, event Event) error
 
 type Consumer struct {
@@ -42,39 +46,57 @@ func (c *Consumer) Start(ctx context.Context) error {
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			out, err := c.client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
-				QueueUrl:            &c.queueURL,
-				WaitTimeSeconds:     c.waitSeconds,
-				MaxNumberOfMessages: c.maxMessages,
-			})
+		out, err := c.client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
+			QueueUrl:            &c.queueURL,
+			WaitTimeSeconds:     c.waitSeconds,
+			MaxNumberOfMessages: c.maxMessages,
+		})
+		if err != nil {
+			time.Sleep(3 * time.Second)
+			continue
+		}
+
+		for _, msg := range out.Messages {
+			event, err := parseEvent(*msg.Body)
 			if err != nil {
-				time.Sleep(3 * time.Second)
 				continue
 			}
 
-			for _, msg := range out.Messages {
-				var event Event
-				if err := json.Unmarshal([]byte(*msg.Body), &event); err != nil {
-					continue
-				}
-
-				if event.EventType == "order.created" {
-					event.EventType = "NEW_ORDER"
-				}
-
-				if err := c.handler(ctx, event); err != nil {
-					continue
-				}
-
-				_, _ = c.client.DeleteMessage(ctx, &sqs.DeleteMessageInput{
-					QueueUrl:      &c.queueURL,
-					ReceiptHandle: msg.ReceiptHandle,
-				})
+			if event.EventType == "order.created" {
+				event.EventType = "NEW_ORDER"
 			}
+
+			if err := c.handler(ctx, event); err != nil {
+				continue
+			}
+
+			_, _ = c.client.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+				QueueUrl:      &c.queueURL,
+				ReceiptHandle: msg.ReceiptHandle,
+			})
 		}
 	}
+}
+
+func parseEvent(body string) (Event, error) {
+	var event Event
+
+	if err := json.Unmarshal([]byte(body), &event); err == nil && event.EventType != "" {
+		return event, nil
+	}
+
+	var envelope snsEnvelope
+	if err := json.Unmarshal([]byte(body), &envelope); err != nil {
+		return event, err
+	}
+
+	if envelope.Message == "" {
+		return event, errors.New("empty sns message")
+	}
+
+	if err := json.Unmarshal([]byte(envelope.Message), &event); err != nil {
+		return event, err
+	}
+
+	return event, nil
 }
