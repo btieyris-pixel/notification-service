@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	firebase.google.com/go/v4 v4.19.0
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.27
 	github.com/jackc/pgx/v5 v5.9.2
 	google.golang.org/api v0.278.0
 )
@@ -23,6 +24,10 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.53.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.53.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.41.7 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.23 // indirect
+	github.com/aws/smithy-go v1.25.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20251210132809-ee656c7534f5 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.36.0 // indirect
