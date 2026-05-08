@@ -68,6 +68,15 @@ func main() {
 			// - Envía push vía FCM
 			// - Si falla, NO elimina mensaje SQS
 
+			if event.EventType == "order.created" && event.DriverID == "" {
+				log.Info("ignored order.created without driver_id: " + event.OrderID)
+				return nil
+			}
+
+			if event.EventType == "order.assigned" {
+				event.EventType = "NEW_ORDER"
+			}
+
 			token, err := repo.GetDriverToken(ctx, event.DriverID)
 			if err != nil {
 				log.Error("token not found for driver: " + event.DriverID)
